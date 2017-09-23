@@ -1,0 +1,25 @@
+name:                tidal-vis
+version:             0.9.5
+synopsis:            Visual rendering for Tidal patterns
+-- description:         
+homepage:            http://yaxu.org/tidal/
+license:             GPL-3
+license-file:        LICENSE
+author:              Alex McLean
+maintainer:          alex@slab.org
+Stability:           Experimental
+Copyright:           (c) Alex McLean and others, 2017
+category:            Sound
+build-type:          Simple
+cabal-version:       >=1.4
+
+--Extra-source-files: README.md tidal.el doc/tidal.md doc/tidal.pdf
+
+Description: Tidal is a domain specific language for live coding pattern. This package allows colour patterns to be rendered as PDF or SVG files.
+
+library
+  Exposed-modules:     Sound.Tidal.Vis
+                       Sound.Tidal.Vis2
+                       Sound.Tidal.VisCycle
+
+  Build-depends: base < 5, tidal>=0.9.5, colour, cairo, process
