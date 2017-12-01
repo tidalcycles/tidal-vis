@@ -15,7 +15,8 @@ import System.Cmd
 import Data.List
 import Data.Ord         ( comparing )
 
-totalWidth = 1080 :: Double
+totalWidth = 50 :: Double
+border = 5
 ratio = 1
 
 arrangeEvents [] = []
@@ -25,13 +26,21 @@ addEvent e [] = [[e]]
 addEvent e (level:levels) | fits e level = (e:level):levels
                           | otherwise = level:(addEvent e levels)
 
-v sf fn (x,y) levels =
+v sf fn (x,y) levels label =
       sf fn x y $ \surf -> do
         C.renderWith surf $ do
           C.setAntialias C.AntialiasBest
           C.save
-          C.scale totalWidth totalWidth
+          C.translate border border
+          C.scale (totalWidth-(border*2)) (totalWidth-(border*2))
           C.setOperator C.OperatorOver
+          C.selectFontFace "Inconsolata" C.FontSlantNormal C.FontWeightNormal
+          C.setFontSize 0.2
+          (C.TextExtents _ _ textW textH _ _) <- C.textExtents (label :: String)
+          C.moveTo (0) (textH)
+          C.textPath (label :: String)
+          C.setSourceRGB 0 0 0
+          C.fill
           -- C.setSourceRGB 0 0 0
           -- C.rectangle 0 0 1 1
           --C.fill
@@ -58,12 +67,14 @@ renderLevel total (n, level) = do C.save
                          levelHeight = (1 / fromIntegral (total+1))/2
             vPDF = v C.withPDFSurface
 
-vis name pat = do v (C.withPDFSurface) (name ++ ".pdf") (totalWidth, totalWidth) levels
-                  return ()
-                    where levels = arrangeEvents $ sortOn ((\x -> snd x - fst x) . snd') (arc pat (0,1))
-                          sortOn f = map snd . sortBy (comparing fst) . map (\x -> let y = f x in y `seq` (y, x))
+visCycle :: [Char] -> String -> Pattern ColourD -> IO ()
+visCycle name label pat =
+  do v (C.withPDFSurface) (name ++ ".pdf") (totalWidth, totalWidth) levels label
+     return ()
+       where levels = arrangeEvents $ sortOn ((\x -> snd x - fst x) . snd') (arc pat (0,1))
+             sortOn f = map snd . sortBy (comparing fst) . map (\x -> let y = f x in y `seq` (y, x))
 
-visAsString pat = do vis "/tmp/vis2-tmp" pat
+visAsString pat = do visCycle "/tmp/vis2-tmp" "" pat
                      svg <- readFile "/tmp/vis2-tmp.svg"
                      return svg
 
