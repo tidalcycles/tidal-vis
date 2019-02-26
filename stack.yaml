@@ -1,0 +1,14 @@
+resolver: lts-13.8
+
+# packages: []
+
+
+extra-deps:
+  - SDL-0.6.7.0
+  - cairo-0.13.6.0
+  - tidal-1.0.7
+  - gtk2hs-buildtools-0.13.5.0
+  - SDL-gfx-0.7.0.0
+  - SDL-image-0.6.2.0
+  - SDL-ttf-0.6.3.0
+
