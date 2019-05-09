@@ -1,6 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-
 module Common
        ( arrangeEvents
        , beatNow
@@ -9,10 +8,10 @@ module Common
        , levels
        , remoteLocal
        , segmentator
+       , toPattern
        ) where
 
 import Control.Concurrent.MVar
-
 import Data.Bits (shiftR, (.&.))
 import Data.Colour.SRGB (sRGB)
 import Data.Function (on)
@@ -21,20 +20,18 @@ import Data.List (groupBy, nub, sortOn)
 import Data.Maybe (isJust)
 import Data.Time (diffUTCTime, getCurrentTime)
 import Network.Socket (SockAddr (..), addrAddress, getAddrInfo)
-
 import Sound.Tidal.Context
 
 import qualified Sound.OSC.FD as OSC
 import qualified Sound.Tidal.Tempo as Tempo
 
 
--- | Common used functions.
+-- | Common functions.
 fi :: (Integral a, Num b) => a -> b
 fi = fromIntegral
 
 arrangeEvents :: [Event b] -> [[Event b]]
-arrangeEvents []     = []
-arrangeEvents (e:es) = addEvent e (arrangeEvents es)
+arrangeEvents = foldr addEvent []
 
 fits :: Event b -> [Event b] -> Bool
 fits (Event _ part' _) events = not $ any (\Event{..} -> isJust $ subArc part' part) events
@@ -51,7 +48,7 @@ levels pat = arrangeEvents $ sortOn' ((\Arc{..} -> stop - start) . part) (queryA
 sortOn' :: Ord a => (b -> a) -> [b] -> [b]
 sortOn' f = map snd . sortOn fst . map (\x -> let y = f x in y `seq` (y, x))
 
--- | Recover depricated functions for 1.0.7
+-- | Recover depricated functions for 1.0.13
 dirtToColour :: ControlPattern -> Pattern ColourD
 dirtToColour = fmap (stringToColour . show)
 
@@ -77,7 +74,7 @@ split :: Time -> [Event a] -> [Event a]
 split _ [] = []
 split t (ev@(Event whole Arc{..} value):es)
     | t > start && t < stop =
-      Event whole (Arc start t) value : Event whole (Arc t stop) value : (split t es)
+      Event whole (Arc start t) value : Event whole (Arc t stop) value : split t es
     | otherwise = ev:split t es
 
 points :: [Event a] -> [Time]
@@ -105,12 +102,15 @@ remoteLocal :: Config -> OSC.Time -> IO (MVar Tempo.Tempo)
 remoteLocal config time = do
   let tempoClientPort = cTempoClientPort config
       hostname = cTempoAddr config
-      port = cTempoPort config
+      remotePort = cTempoPort config
   (remote_addr:_) <- getAddrInfo Nothing (Just hostname) Nothing
   local <- OSC.udpServer "127.0.0.1" tempoClientPort
-  let (SockAddrInet _ a) = addrAddress remote_addr
-      remote = SockAddrInet (fromIntegral port) a
-  newMVar $ Tempo.defaultTempo time local remote
+  case addrAddress remote_addr of
+    SockAddrInet _ a -> do
+      let remote = SockAddrInet (fromIntegral remotePort) a
+      newMVar $ Tempo.defaultTempo time local remote
+    _ -> error "wrong Socket"
 
-
+toPattern :: [Event ControlMap] -> ControlPattern
+toPattern evs = Pattern Digital $ const evs
 

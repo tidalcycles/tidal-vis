@@ -9,10 +9,7 @@ import VisCycle
 import VisGradient
 
 
--- | Examples
---
--- | For  pattern animation look at 'runAnimation' function at 'CycleAnimation.hs' module.
--- | There two forms of moving patterns: cycle and rectangle.
+-- | Examples how to render still images to PDF or SVG formats.
 --
 -- | Here is renders of still images only.
 main :: IO ()
@@ -35,6 +32,18 @@ gradientRect = renderGradientPDF "./examples/gradientRect" pip
 -- | Make gradient rectangle pattern
 matCycleWithBorders :: IO ()
 matCycleWithBorders = renderCyclePDF "./examples/cycle" "background text" pip
+
+repeater :: Pattern ColourD
+repeater = dirtToColour
+    $ juxBy 0.6 brak
+    $ every 2 ((* speed (1 + sine)) . ply 4)
+    $ stack
+        [ s "bd:4 ~ ~ drum:3 ~ ~ drum:2 ~"
+        , s "~ wind:1/2 hh:9"
+        , s "subroc3d:9(2,7)"
+        ]
+    # speed 0.5
+    # legato 1
 
 -- | Prepared patterns.
 foo :: Pattern ColourD
