@@ -1,5 +1,5 @@
 name:                tidal-vis
-version:             1.0.14
+version:             1.0.15
 synopsis:            Visual rendering for Tidal patterns and osc messages
 homepage:            http://yaxu.org/tidal/
 license:             GPL-3
@@ -65,7 +65,7 @@ library
                   , SDL-ttf
                   , mtl
                   , network
-                  , tidal >= 1.0.15
+                  , tidal >= 1.0.15 && < 1.5
                   , time
                   , unagi-chan
 

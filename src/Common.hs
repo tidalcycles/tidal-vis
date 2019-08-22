@@ -6,6 +6,7 @@ module Common
        , dirtToColour
        , fi
        , levels
+       , levelsWhole
        , remoteLocal
        , segmentator
        , toPattern
@@ -30,8 +31,21 @@ import qualified Sound.Tidal.Tempo as Tempo
 fi :: (Integral a, Num b) => a -> b
 fi = fromIntegral
 
-arrangeEvents :: [Event b] -> [[Event b]]
-arrangeEvents = foldr addEvent []
+fitsWhole :: Event b -> [Event b] -> Bool
+fitsWhole event events = not $ any (\event' -> isJust $ subArc (wholeOrPart event) (wholeOrPart event')) events
+
+addEventWhole :: Event b -> [[Event b]] -> [[Event b]]
+addEventWhole e [] = [[e]]
+addEventWhole e (level:ls)
+    | isAnalog e = level:ls
+    | fitsWhole e level = (e:level) : ls
+    | otherwise = level : addEventWhole e ls
+
+arrangeEventsWhole :: [Event b] -> [[Event b]]
+arrangeEventsWhole = foldr addEventWhole []
+
+levelsWhole :: Pattern a -> [[Event a]]
+levelsWhole pat = arrangeEventsWhole $ sortOn' ((\Arc{..} -> stop - start) . part) (queryArc pat (Arc 0 1))
 
 fits :: Event b -> [Event b] -> Bool
 fits (Event _ part' _) events = not $ any (\Event{..} -> isJust $ subArc part' part) events
@@ -42,13 +56,16 @@ addEvent e (level:ls)
     | fits e level = (e:level) : ls
     | otherwise = level : addEvent e ls
 
-levels :: Pattern ColourD -> [[Event ColourD]]
+arrangeEvents :: [Event b] -> [[Event b]]
+arrangeEvents = foldr addEvent []
+
+levels :: Pattern a -> [[Event a]]
 levels pat = arrangeEvents $ sortOn' ((\Arc{..} -> stop - start) . part) (queryArc pat (Arc 0 1))
 
 sortOn' :: Ord a => (b -> a) -> [b] -> [b]
 sortOn' f = map snd . sortOn fst . map (\x -> let y = f x in y `seq` (y, x))
 
--- | Recover depricated functions for 1.0.13
+-- | Recover deprecated functions for 1.0.13
 dirtToColour :: ControlPattern -> Pattern ColourD
 dirtToColour = fmap (stringToColour . show)
 
@@ -61,8 +78,7 @@ stringToColour str = sRGB (r/256) (g/256) (b/256)
     b = fromIntegral (i .&. 0x0000FF)
 
 segmentator :: Pattern ColourD -> Pattern [ColourD]
-segmentator p@Pattern{..} = Pattern nature
-    $ \(State arc@Arc{..} _)
+segmentator p@Pattern{..} = Pattern $ \(State arc@Arc{..} _)
     -> filter (\(Event _ (Arc start' stop') _) -> start' < stop && stop' > start)
     $ groupByTime (segment' (queryArc p arc))
 
@@ -112,5 +128,5 @@ remoteLocal config time = do
     _ -> error "wrong Socket"
 
 toPattern :: [Event ControlMap] -> ControlPattern
-toPattern evs = Pattern Digital $ const evs
+toPattern evs = Pattern $ const evs
 
