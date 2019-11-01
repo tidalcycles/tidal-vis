@@ -2,6 +2,7 @@
 
 module Common
        ( arrangeEvents
+       , arrangeEventsWhole
        , beatNow
        , dirtToColour
        , fi
@@ -44,8 +45,9 @@ addEventWhole e (level:ls)
 arrangeEventsWhole :: [Event b] -> [[Event b]]
 arrangeEventsWhole = foldr addEventWhole []
 
-levelsWhole :: Pattern a -> [[Event a]]
-levelsWhole pat = arrangeEventsWhole $ sortOn' ((\Arc{..} -> stop - start) . part) (queryArc pat (Arc 0 1))
+levelsWhole :: Eq a => Pattern a -> [[Event a]]
+levelsWhole pat = arrangeEventsWhole $ sortOn' ((\Arc{..} -> 0 - (stop - start)) . wholeOrPart) (defragParts $ queryArc pat (Arc 0 1))
+-- levelsWhole pat = arrangeEventsWhole $ defragParts $ queryArc pat (Arc 0 1)
 
 fits :: Event b -> [Event b] -> Bool
 fits (Event _ part' _) events = not $ any (\Event{..} -> isJust $ subArc part' part) events
@@ -59,8 +61,9 @@ addEvent e (level:ls)
 arrangeEvents :: [Event b] -> [[Event b]]
 arrangeEvents = foldr addEvent []
 
-levels :: Pattern a -> [[Event a]]
-levels pat = arrangeEvents $ sortOn' ((\Arc{..} -> stop - start) . part) (queryArc pat (Arc 0 1))
+levels :: Eq a => Pattern a -> [[Event a]]
+-- levels pat = arrangeEvents $ sortOn' ((\Arc{..} -> stop - start) . part) (defragParts $ queryArc pat (Arc 0 1))
+levels pat = arrangeEvents $ reverse $ defragParts $ queryArc pat (Arc 0 1)
 
 sortOn' :: Ord a => (b -> a) -> [b] -> [b]
 sortOn' f = map snd . sortOn fst . map (\x -> let y = f x in y `seq` (y, x))
@@ -80,7 +83,7 @@ stringToColour str = sRGB (r/256) (g/256) (b/256)
 segmentator :: Pattern ColourD -> Pattern [ColourD]
 segmentator p@Pattern{..} = Pattern $ \(State arc@Arc{..} _)
     -> filter (\(Event _ (Arc start' stop') _) -> start' < stop && stop' > start)
-    $ groupByTime (segment' (queryArc p arc))
+    $ groupByTime (segment' (defragParts $ queryArc p arc))
 
 segment' :: [Event a] -> [Event a]
 segment' es = foldr split es pts
