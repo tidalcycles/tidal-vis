@@ -48,7 +48,7 @@ renderLevel _ (num, level) = do
     mapM_ drawEvent $ level
     C.restore
   where
-    drawEvent e@(Event _ Arc{..} c) = do
+    drawEvent e@(Event _ _ Arc{..} c) = do
         let (Arc sWhole eWhole) = wholeOrPart e
         let (RGB r g b) = toSRGB c
         let x = (fromRational start) * totalWidth
