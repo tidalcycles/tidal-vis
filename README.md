@@ -60,7 +60,7 @@ Look at _CycleAnimation.hs_ for more information. Look at `looping` function to 
 
 ## Tutorial
 
-[`tidal-vis` installation tutorial](http://blog.kindohm.com/2016/09/02/tidal-vis) by [Kindohm](http://github.com/kindohm)
+[`tidal-vis` installation tutorial](http://blog.kindohm.com/posts/2016/2016-09-02-tidal-vis/) by [Kindohm](http://github.com/kindohm)
 
 ## Hackage
 
