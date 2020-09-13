@@ -17,7 +17,7 @@ totalWidth :: Double
 totalWidth = 1700
 
 ratio :: Double
-ratio = 3/40
+ratio = 2/40
 
 levelHeight :: Double
 levelHeight = totalWidth * ratio
@@ -48,7 +48,7 @@ renderLevel _ (num, level) = do
     mapM_ drawEvent $ level
     C.restore
   where
-    drawEvent e@(Event _ Arc{..} c) = do
+    drawEvent e@(Event _ _ Arc{..} c) = do
         let (Arc sWhole eWhole) = wholeOrPart e
         let (RGB r g b) = toSRGB c
         let x = (fromRational start) * totalWidth
@@ -82,14 +82,14 @@ renderLevel _ (num, level) = do
             -- C.fill
             -- C.stroke
 
-renderGradientSVG :: String -> Pattern ColourD -> IO ()
-renderGradientSVG name pat = do
+renderGradientSVG :: String -> String -> Pattern ColourD -> IO ()
+renderGradientSVG name label pat = do
     v C.withSVGSurface (name ++ ".svg")
         (totalWidth, levelHeight * (fromIntegral $ length $ levels pat)) $ levels pat
     return ()
 
-renderGradientPDF :: String -> Pattern ColourD -> IO ()
-renderGradientPDF name pat = do
+renderGradientPDF :: String -> String -> Pattern ColourD -> IO ()
+renderGradientPDF name label pat = do
     v C.withPDFSurface (name ++ ".pdf")
         (totalWidth, levelHeight * (fromIntegral $ length $ levels pat)) $ levels pat
     return ()

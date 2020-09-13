@@ -82,7 +82,7 @@ v sf fn (x,y) pat =
 
 -- | Convert time and color to rendered type.
 renderEvent :: Event [ColourD] -> C.Render ()
-renderEvent (Event _ Arc{..} value) = do
+renderEvent (Event _ _ Arc{..} value) = do
     C.save
     drawBlocks value 0
     C.restore
@@ -104,8 +104,8 @@ renderEvent (Event _ Arc{..} value) = do
 
 events :: Pattern ColourD -> [Event [ColourD]]
 events pat = map
-    ( \(Event whole Arc{..} value)
-      -> Event whole (Arc ((start - tick) / speed') ((stop - tick) / speed')) value
+    ( \(Event context whole Arc{..} value)
+      -> Event context whole (Arc ((start - tick) / speed') ((stop - tick) / speed')) value
     )
     $ queryArc (segmentator pat) (Arc tick (tick + speed'))
   where

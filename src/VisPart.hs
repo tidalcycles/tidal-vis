@@ -17,25 +17,35 @@ totalWidth :: Double
 totalWidth = 1700
 
 ratio :: Double
-ratio = 3/40
+ratio = 2/40
 
 levelHeight :: Double
 levelHeight = totalWidth * ratio
+
+
 
 v :: Show a => (FilePath -> Double -> Double -> (C.Surface -> IO ()) -> IO ())
   -> FilePath
   -> (Double, Double)
   -> [[Event a]]
+  -> String
   -> IO ()
-v sf fn (x,y) es = sf fn x y $ \surf ->
+v sf fn (x,y) es label = sf fn x y $ \surf ->
     C.renderWith surf $ do
+        C.setAntialias C.AntialiasBest
         C.save
         -- C.scale x (y / (fromIntegral $ length colorEvents))
         C.setOperator C.OperatorOver
+        C.selectFontFace ("Inconsolata" :: String) C.FontSlantNormal C.FontWeightNormal
+        C.setFontSize 0.2
+        (C.TextExtents _ _ _ textH _ _) <- C.textExtents (label :: String)
+        C.moveTo 0 textH
+        C.textPath (label :: String)
+        C.setSourceRGB 0 0 0
+        C.fill
         -- C.setSourceRGB 0 0 0
         -- C.rectangle 0 0 1 1
         --C.fill
-        C.setAntialias C.AntialiasBest
         mapM_ (renderLevel (length es)) $ enumerate es
         C.restore
 
@@ -49,7 +59,7 @@ renderLevel _ (num, level) = do
     mapM_ drawEvent $ level
     C.restore
   where
-    drawEvent e@(Event _ (Arc sPart ePart) v) = do
+    drawEvent e@(Event _ _ (Arc sPart ePart) v) = do
         let (Arc sWhole eWhole) = wholeOrPart e
         let (r, g, b) = (0,0,0)
         let px = (fromRational sPart) * totalWidth
@@ -64,8 +74,8 @@ renderLevel _ (num, level) = do
 
         C.withLinearPattern wx 0 (ww + wx) 0 $ \pat -> do
             C.save
-            C.patternAddColorStopRGBA pat 0 0.8 0.8 0.8 1
-            C.patternAddColorStopRGBA pat 1 0 0 0 0.5
+            C.patternAddColorStopRGBA pat 0 0.9 0.9 0.9 1
+            C.patternAddColorStopRGBA pat 1 0.4 0.4 0.4 0.5
             C.patternSetFilter pat C.FilterFast
             C.setSource pat
             let leftGap = if px == wx then halfGap else 0
@@ -111,9 +121,9 @@ renderLevel _ (num, level) = do
             C.restore
             C.selectFontFace ("Inconsolata" :: String) C.FontSlantNormal C.FontWeightNormal
             C.setFontSize 35
-            (C.TextExtents _ _ textW textH _ _) <- C.textExtents (show v)
-            C.moveTo (wx + 12) (y + textH + 16)
-            C.textPath (show v)
+            (C.TextExtents _ _ textW textH _ _) <- C.textExtents (stripQuotes $ show v)
+            C.moveTo (wx + 12) (y + 24 + 16)
+            C.textPath (stripQuotes $ show v)
             C.setSourceRGB 0 0 0
             C.fill
 --        C.save
@@ -123,15 +133,20 @@ renderLevel _ (num, level) = do
             -- C.fill
             -- C.stroke
 
-renderPartSVG :: Show a => String -> Pattern a -> IO ()
-renderPartSVG name pat = do
+stripQuotes s = front $ back s
+  where front ('"':xs) = xs
+        front xs = xs
+        back = reverse . front . reverse 
+
+renderPartSVG :: (Eq a, Show a) => String -> String -> Pattern a -> IO ()
+renderPartSVG name label pat = do
     v C.withSVGSurface (name ++ ".svg")
-        (totalWidth, levelHeight * (fromIntegral $ length $ levelsWhole pat)) $ levelsWhole pat
+        (totalWidth, levelHeight * (fromIntegral $ length $ levelsWhole pat)) (levelsWhole pat) label
     return ()
 
-renderPartPDF :: Show a => String -> Pattern a -> IO ()
-renderPartPDF name pat = do
+renderPartPDF :: (Eq a, Show a) => String -> String -> Pattern a -> IO ()
+renderPartPDF name label pat = do
     v C.withPDFSurface (name ++ ".pdf")
-        (totalWidth, levelHeight * (fromIntegral $ length $ levelsWhole pat)) $ levelsWhole pat
+        (totalWidth, levelHeight * (fromIntegral $ length $ levelsWhole pat)) (levelsWhole pat) label
     return ()
 

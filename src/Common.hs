@@ -2,6 +2,7 @@
 
 module Common
        ( arrangeEvents
+       , arrangeEventsWhole
        , beatNow
        , dirtToColour
        , fi
@@ -44,11 +45,12 @@ addEventWhole e (level:ls)
 arrangeEventsWhole :: [Event b] -> [[Event b]]
 arrangeEventsWhole = foldr addEventWhole []
 
-levelsWhole :: Pattern a -> [[Event a]]
-levelsWhole pat = arrangeEventsWhole $ sortOn' ((\Arc{..} -> stop - start) . part) (queryArc pat (Arc 0 1))
+levelsWhole :: Eq a => Pattern a -> [[Event a]]
+levelsWhole pat = arrangeEventsWhole $ sortOn' ((\Arc{..} -> 0 - (stop - start)) . wholeOrPart) (defragParts $ queryArc pat (Arc 0 1))
+-- levelsWhole pat = arrangeEventsWhole $ defragParts $ queryArc pat (Arc 0 1)
 
 fits :: Event b -> [Event b] -> Bool
-fits (Event _ part' _) events = not $ any (\Event{..} -> isJust $ subArc part' part) events
+fits (Event _ _ part' _) events = not $ any (\Event{..} -> isJust $ subArc part' part) events
 
 addEvent :: Event b -> [[Event b]] -> [[Event b]]
 addEvent e [] = [[e]]
@@ -59,8 +61,9 @@ addEvent e (level:ls)
 arrangeEvents :: [Event b] -> [[Event b]]
 arrangeEvents = foldr addEvent []
 
-levels :: Pattern a -> [[Event a]]
-levels pat = arrangeEvents $ sortOn' ((\Arc{..} -> stop - start) . part) (queryArc pat (Arc 0 1))
+levels :: Eq a => Pattern a -> [[Event a]]
+-- levels pat = arrangeEvents $ sortOn' ((\Arc{..} -> stop - start) . part) (defragParts $ queryArc pat (Arc 0 1))
+levels pat = arrangeEvents $ reverse $ defragParts $ queryArc pat (Arc 0 1)
 
 sortOn' :: Ord a => (b -> a) -> [b] -> [b]
 sortOn' f = map snd . sortOn fst . map (\x -> let y = f x in y `seq` (y, x))
@@ -79,8 +82,8 @@ stringToColour str = sRGB (r/256) (g/256) (b/256)
 
 segmentator :: Pattern ColourD -> Pattern [ColourD]
 segmentator p@Pattern{..} = Pattern $ \(State arc@Arc{..} _)
-    -> filter (\(Event _ (Arc start' stop') _) -> start' < stop && stop' > start)
-    $ groupByTime (segment' (queryArc p arc))
+    -> filter (\(Event _ _ (Arc start' stop') _) -> start' < stop && stop' > start)
+    $ groupByTime (segment' (defragParts $ queryArc p arc))
 
 segment' :: [Event a] -> [Event a]
 segment' es = foldr split es pts
@@ -88,20 +91,20 @@ segment' es = foldr split es pts
 
 split :: Time -> [Event a] -> [Event a]
 split _ [] = []
-split t (ev@(Event whole Arc{..} value):es)
+split t (ev@(Event c whole Arc{..} value):es)
     | t > start && t < stop =
-      Event whole (Arc start t) value : Event whole (Arc t stop) value : split t es
+      Event c whole (Arc start t) value : Event c whole (Arc t stop) value : split t es
     | otherwise = ev:split t es
 
 points :: [Event a] -> [Time]
 points []                       = []
-points (Event _ Arc{..} _ : es) = start : stop : points es
+points (Event _ _ Arc{..} _ : es) = start : stop : points es
 
 groupByTime :: [Event a] -> [Event [a]]
 groupByTime es = map merge $ groupBy ((==) `on` part) $ sortOn (stop . part) es
   where
     merge :: [EventF a b] -> EventF a [b]
-    merge evs@(Event{whole, part} : _) = Event whole part $ map (\Event{value} -> value) evs
+    merge evs@(Event{context, whole, part} : _) = Event context whole part $ map (\Event{value} -> value) evs
     merge _                            = error "groupByTime"
 
 beatNow :: Tempo.Tempo -> IO Double

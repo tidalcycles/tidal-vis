@@ -196,7 +196,7 @@ drawPatR (x1,x2) p screen beat = mapM_ drawEvents $ event (pos beat) p
             (width * fromRational (b - pos beat)) (width * fromRational (e - b)) 1
 
 event :: Rational -> Pat.Pattern ColourD -> [((Rational, Rational), [ColourD])]
-event position pat = map (\(Pat.Event _ Arc{..} events) ->
+event position pat = map (\(Pat.Event _ _ Arc{..} events) ->
     ((max start position, min stop (position + 1)), events))
         $ queryArc (segmentator pat) (Arc position (position + 1))
 

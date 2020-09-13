@@ -27,7 +27,7 @@ matBundleRect = renderMatBundlePDF "./examples/" [foo, pip, pop, bar, buz]
 
 -- | Make gradient rectangle pattern
 gradientRect :: IO ()
-gradientRect = renderGradientPDF "./examples/gradientRect" pip
+gradientRect = renderGradientPDF "./examples/gradientRect" "" pip
 
 -- | Make gradient rectangle pattern
 matCycleWithBorders :: IO ()

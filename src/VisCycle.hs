@@ -52,7 +52,7 @@ renderLevel total (num, level) = do
     C.restore
   where
     drawEvent :: Event ColourD -> C.Render ()
-    drawEvent (Event _ Arc{..} c) = do
+    drawEvent (Event _ _ Arc{..} c) = do
         let (RGB r g b) = toSRGB c
         let levelHeight = (1 / fi (total+1))/2
         let h = levelHeight * fi (num + 1)
