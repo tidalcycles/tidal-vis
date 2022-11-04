@@ -9,31 +9,37 @@ Tidal is a domain specific language for live coding pattern. This package allows
 
 ## (1) Realtime animation during livecoding
 
-1. Add following lines to _BootTidal.hs_
+1. Comment out any existing lines in *BootTidal.hs* that begin with `tidal <- startTidal`.
 
-        -- OSCTarget for pattern visualizing.
-        patternTarget = OSCTarget { oName = "Pattern handler", oAddress = "127.0.0.1", oPort = 5050, oPath = "/trigger/something", oShape = Nothing, oLatency = 0.02, oPreamble = [], oTimestamp = BundleStamp }
+2. Add the following lines to *BootTidal.hs*:
 
-        -- OSCTarget for play music via SuperCollider.
-        musicTarget = superdirtTarget { oLatency = 0.1, oAddress = "127.0.0.1", oPort = 57120 }
+```haskell
+ -- Target and shape for pattern visualizing.
+ patternTarget = Target { oName = "Pattern handler", oAddress = "127.0.0.1", oPort = 5050, oBusPort = Nothing, oLatency = 0.02, oWindow = Nothing, oSchedule = Pre BundleStamp, oHandshake = False }
+ patternShape = OSC "/trigger/something" $ Named {requiredArgs = []}
 
-        config = defaultConfig {cFrameTimespan = 1/20}
+ -- Target for playing music via SuperCollider.
+ musicTarget = superdirtTarget { oLatency = 0.1, oAddress = "127.0.0.1", oPort = 57120 }
 
-        -- Send pattern as osc both to SC and to tidal-vis
-        tidal <- startMulti [musicTarget, patternTarget] config
+ config = defaultConfig {cFrameTimespan = 1/20}
 
-        -- Send pattern as osc to SC only
-        -- tidal <- startTidal musicTarget config
+ -- Send pattern as OSC both to SuperCollider and to tidal-vis.
+ tidal <- startStream config [(musicTarget, [superdirtShape]), (patternTarget, [patternShape])]
 
-2. Comment `tidal <- startTidal...` and uncomment `tidal <- startMulti...`
+ -- Send pattern as OSC to SuperCollider only.
+ -- tidal <- startTidal musicTarget config
+```
 
-3. Build _tidal-vis_ and run
+3. Install **tidal-vis** and run:
 
-        cd /tidal-vis
-        stack build
-        stack exec tidal-vis
+```bash
+ cabal update
+ cabal install tidal-vis
+ tidal-vis
+```
 
-4. Eval your tidal code.
+4. Eval your **Tidal** code.
+
 5. Profit.
 
 ## (2) Render SVG or PDF
