@@ -24,7 +24,7 @@ import Data.Time (diffUTCTime, getCurrentTime)
 import Network.Socket (SockAddr (..), addrAddress, getAddrInfo)
 import Sound.Tidal.Context
 
-import qualified Sound.OSC.FD as OSC
+import qualified Sound.Osc.Fd as OSC
 import qualified Sound.Tidal.Tempo as Tempo
 
 
